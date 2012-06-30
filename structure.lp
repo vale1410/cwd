@@ -15,19 +15,17 @@ node(union(1..u)).
 %  creating the parse tree of the formula
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-incoming(union(N)) :- node(union(N)).
-incoming(renaming(N)) :- node(renaming(N)).
-incoming(connecting(N)) :- node(connecting(N)).
+binary(renaming(X)) :- node(renaming(X)).
+binary(connecting(X)) :- node(connecting(X)).
+incoming(union(X)) :- node(union(X)).
+incoming(N) :- binary(N).
 
-0 { parse(M, N) : incoming(N) } 1 :- node(M).
-
-:- incoming(N), parse(N,N).
+0 { parse(M, N) : M != N : incoming(N) } 1 :- node(M).
 
 :- node(leaf(N)), not 1 { parse(leaf(N),M) } 1.
 
-:- node(renaming(N)), not 1 { parse(M,renaming(N)) : node(M) } 1.
-:- node(connecting(N)), not 1 { parse(M,connecting(N)) : node(M) } 1.
-:- node(union(N)), not 2 { parse(M,union(N)) : node(M) } 2.
+:- binary(N), not 1 { parse(M,N) : node(M) } 1.
+:- node(union(X)), not 2 { parse(M,union(X)) : node(M) } 2.
 
 % there is only one top node
 top(N) :- node(N), { parse(N,M) : node(M) } 0. 
@@ -45,6 +43,19 @@ desc(M,O) :- desc(M,N), parse(N,O).
 :- desc(renaming(X), renaming(Y)), X > Y. 
 :- desc(connecting(X), connecting(Y)), X > Y. 
 :- desc(union(X), union(Y)), X > Y. 
+
+% restrict to non repeating connections
+
+:- parse(connecting(X), connecting(Y)),
+   parameter(connecting(X),A,B), parameter(connecting(Y),A,B). 
+
+%:- node(renaming(X)), node(renaming(Y)), 
+%   parse(renaming(X), renaming(Y)),
+%   parameter(renaming(X),A,B), parameter(renaming(Y),A,B). 
+%
+%:- node(renaming(X)), node(renaming(Y)), 
+%   parse(renaming(X), renaming(Y)),
+%   parameter(renaming(X),A,B), parameter(renaming(Y),B,A). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  defining the operations and state on each node in the parse tree
@@ -98,4 +109,7 @@ mm(X,Y,Y,X) :- node(leaf(X)), node(leaf(Y)), X > Y.
 
 % definition of final state: every edge needs to be created
 
-:- top(N), edge(V,W), not state_edge(V,W).
+:- edge(V,W), not state_edge(V,W).
+%found(V,W) :- edge(V,W), state_edge(V,W).
+
+%#maximize { found(_,_) } .

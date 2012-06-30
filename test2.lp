@@ -4,7 +4,7 @@
 #const r = 5. % number of renamings
 #const c = 5. % number of connections
 #const u = 5. % number of unions
-#const l = 2. % number of labels
+#const l = 3. % number of labels
 
 edge(1,2).
 edge(2,3).
