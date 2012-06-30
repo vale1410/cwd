@@ -1,58 +1,10 @@
-%% test case 1 complete graph P_4
-%#const v = 4. % number of verticies
-%#const r = 2. % number of renamings
-%#const c = 3. % number of connections
-%#const u = 3. % number of unions
-%#const l = 2. % number of labels
-%
-%edge(1,2).
-%edge(1,3).
-%edge(1,4).
-%edge(2,3).
-%edge(2,4).
-%edge(3,4).
-
-% test case 2: grid of 2x3
-%
-#const v = 6. % number of verticies
-#const r = 5. % number of renamings
-#const c = 5. % number of connections
-#const u = 5. % number of unions
-#const l = 2. % number of labels
-
-edge(1,2).
-edge(2,3).
-edge(4,5).
-edge(5,6).
-edge(1,4).
-edge(2,5).
-edge(3,6).
-
-%% test case 3: see example in "Edge dominating set and colorings on graphs with fixed  clique-width"
-%#const v = 8. % number of verticies
-%#const r = 2. % number of renamings
-%#const c = 7. % number of connections
-%#const u = 7. % number of unions
-%#const l = 3. % number of labels
-%
-%edge(1,2).
-%edge(2,3).
-%edge(3,4).
-%edge(5,6).
-%edge(6,7).
-%edge(7,8).
-%edge(2,6).
-%edge(2,7).
-%edge(3,6).
-%edge(3,7).
-
 #hide.
 #show top/1.
 #show parse/2.
 #show parameter/2.
 #show parameter/3.
 #show state_vertex/3.
-#show state_edge/3.
+#show state_edge/2.
 
 node(leaf(1..v)).
 node(renaming(1..r)).
@@ -81,10 +33,10 @@ incoming(connecting(N)) :- node(connecting(N)).
 top(N) :- node(N), { parse(N,M) : node(M) } 0. 
 :- not 1 {top(N) : node(N) } 1.
 
-% all nodes are reachable from top
-reachable(N) :- top(N). 
-reachable(M) :- parse(M,N), reachable(N). 
-:- node(N), not reachable(N). 
+%% all nodes are reachable from top
+%reachable(N) :- top(N). 
+%reachable(M) :- parse(M,N), reachable(N). 
+%:- node(N), not reachable(N). 
 
 % break symmetries of descendent node ids
 desc(M,N) :- parse(M,N), incoming(M).
@@ -108,9 +60,6 @@ label(1..l).
 
 state_vertex(leaf(V),V,L) :- parameter(leaf(V),L).
 
-% frame axiom: edges are always passed on
-state_edge(N,V,W) :- parse(M,N), state_edge(M,V,W).
-
 % state update: union
 state_vertex(union(X),V,L) :- parse(M,union(X)), state_vertex(M,V,L).
  
@@ -133,24 +82,20 @@ state_vertex(connecting(X),V,L) :-
     parse(M,connecting(X)), 
     state_vertex(M,V,L).
 
-state_edge(connecting(X),V1,V2) :- 
+state_edge(V11,V22) :- 
     parse(M,connecting(X)),
     state_vertex(M,V1,L1),
     state_vertex(M,V2,L2),
     parameter(connecting(X),L1,L2),
-    V1 < V2. 
+    mm(V1,V2,V11,V22).
 
-state_edge(connecting(X),V2,V1) :- 
-    parse(M,connecting(X)),
-    state_vertex(M,V1,L1),
-    state_vertex(M,V2,L2),
-    parameter(connecting(X),L1,L2),
-    V1 > V2. 
+mm(X,Y,X,Y) :- node(leaf(X)), node(leaf(Y)), X < Y.
+mm(X,Y,Y,X) :- node(leaf(X)), node(leaf(Y)), X > Y.
 
 % never add edges that dont exist in the final graph
 
-:- state_edge(_,V,W), not edge(V,W).
+:- state_edge(V,W), not edge(V,W).
 
 % definition of final state: every edge needs to be created
 
-:- top(N), edge(V,W), not state_edge(N,V,W).
+:- top(N), edge(V,W), not state_edge(V,W).
