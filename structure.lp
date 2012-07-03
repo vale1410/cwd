@@ -20,16 +20,15 @@ binary(connecting(X)) :- node(connecting(X)).
 incoming(union(X)) :- node(union(X)).
 incoming(N) :- binary(N).
 
-0 { parse(M, N) : M != N : incoming(N) } 1 :- node(M).
+1 { parse(M, N) : M != N : incoming(N) } 1 :- node(M), M != connecting(c).
 
-:- node(leaf(N)), not 1 { parse(leaf(N),M) } 1.
+:- node(leaf(N)), not 1 { parse(leaf(N),union(X)) : node(union(X)) } 1.
 
 :- binary(N), not 1 { parse(M,N) : node(M) } 1.
 :- node(union(X)), not 2 { parse(M,union(X)) : node(M) } 2.
 
 % there is only one top node
-top(N) :- node(N), { parse(N,M) : node(M) } 0. 
-:- not 1 {top(N) : node(N) } 1.
+top(connecting(c)).
 
 %% all nodes are reachable from top
 %reachable(N) :- top(N). 
@@ -46,16 +45,16 @@ desc(M,O) :- desc(M,N), parse(N,O).
 
 % restrict to non repeating connections
 
-:- parse(connecting(X), connecting(Y)),
+:- parse(connecting(X), connecting(Y)), X < Y,
    parameter(connecting(X),A,B), parameter(connecting(Y),A,B). 
 
-%:- node(renaming(X)), node(renaming(Y)), 
-%   parse(renaming(X), renaming(Y)),
-%   parameter(renaming(X),A,B), parameter(renaming(Y),A,B). 
-%
-%:- node(renaming(X)), node(renaming(Y)), 
-%   parse(renaming(X), renaming(Y)),
-%   parameter(renaming(X),A,B), parameter(renaming(Y),B,A). 
+:- node(renaming(X)), node(renaming(Y)),  X < Y,
+   parse(renaming(X), renaming(Y)),
+   parameter(renaming(X),A,B), parameter(renaming(Y),A,B). 
+
+:- node(renaming(X)), node(renaming(Y)),  X < Y,
+   parse(renaming(X), renaming(Y)),
+   parameter(renaming(X),A,B), parameter(renaming(Y),B,A). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  defining the operations and state on each node in the parse tree
@@ -67,11 +66,19 @@ label(1..l).
 1 { parameter(connecting(X),I,J) : I < J : label(I;J) } 1 :- node(connecting(X)).
 1 { parameter(renaming(X),I,J) : I != J : label(I;J) } 1 :- node(renaming(X)).
 
+% break symmetry on choosing label
+
+%:- parameter(leaf(1),1).
+
 % initial state
 
 state_vertex(leaf(V),V,L) :- parameter(leaf(V),L).
 
+state_vertex(N,V) :- state_vertex(N,V,_).
+:- not state_vertex(connecting(c),V), V = 1..v. 
+
 % state update: union
+
 state_vertex(union(X),V,L) :- parse(M,union(X)), state_vertex(M,V,L).
  
 % state update: renaming
